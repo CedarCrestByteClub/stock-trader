@@ -1,12 +1,13 @@
 package runners;
 
-import clock.Tic;
+import clock.Clock;
 
 public class ClockTester
 {
 	public static void main(String[] args)
 	{
-		Tic t = new Tic(000010);//means 10 seconds
-		System.out.println(t);
+		Clock c = new Clock();//means 10 seconds
+		c.run();
+		System.out.println(c);
 	}
 }
