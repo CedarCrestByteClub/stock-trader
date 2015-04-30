@@ -13,6 +13,7 @@ public class Clock
 {
 	private final String TRADE_INCREMENT;
 	private final String STOP_INCREMENT;
+	private final String FAST_INCREMENT = "000015";//15 seconds
 	/*
 	 * The clock thinks in military time strings.
 	 * These final references are when the market opens and closes,
@@ -25,7 +26,7 @@ public class Clock
 	public Clock()
 	{
 		TRADE_INCREMENT =  "001500";//15 minutes
-		STOP_INCREMENT =  "000100";//1 minute
+		STOP_INCREMENT =   "000100";//1 minute 
 	}
 	
 	public Clock(String t, String s)
@@ -43,10 +44,20 @@ public class Clock
 		String timeStamp = null;
 		while(true)
 		{
-			timeStamp = new SimpleDateFormat("HHmmss").format(Calendar.getInstance().getTime());
+			timeStamp = Clock.currentTime();
 			System.out.println(timeStamp);
 			//if(Integer.parseInt(timeStamp.substring(2)) % TRADE_INCREMENT == 0)
 				
 		}
+	}
+	
+	public static String currentTime()
+	{
+		return (new SimpleDateFormat("HHmmss").format(Calendar.getInstance().getTime()));
+	}
+	private boolean isSeconds(String i)//i for increment
+	{
+		int currentSeconds = Integer.parseInt(Clock.currentTime().substring(4));
+		int incrementSeconds = Integer.parseInt(i.substring(4));
 	}
 }
