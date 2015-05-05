@@ -8,6 +8,5 @@ public class ClockTester
 	{
 		Clock c = new Clock();//means 10 seconds
 		c.run();
-		System.out.println(c);
 	}
 }

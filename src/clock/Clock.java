@@ -3,6 +3,8 @@ package clock;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import strategies.Strategy;
+
 /*
  * Basic controller of the entire bot. Controls
  * when the stock calculator trades and checks
@@ -11,36 +13,46 @@ import java.util.Calendar;
 
 public class Clock
 {
-	private final String TRADE_INCREMENT;
-	private final String STOP_INCREMENT;
-	private final String FAST_INCREMENT = "000015";//15 seconds
-	private boolean tooVolatile = false;
 	/*
 	 * The clock thinks in military time strings.
-	 * These final references are when the market opens and closes,
-	 * so the bot will not trade before or after these times.
+	 * These final references are timings for various
+	 * times or increments the bot should know.
+	 * FAST_INCREMENT has no use as of this being written,
+	 * it is intended for testing to make sure the bot could
+	 * trade faster that 1 minute if it was desired.(IS 05/2/15)
+	 * 
+	 * The minimum value of each unit in an increment is 1, 
+	 * because if it were 0 then the isTime methods would divide
+	 * the time by 0. The only numbers in an increment that matter
+	 * are the ones that are != to 1.
 	 */
-	public final String marketOpen =  "093000";//9:30:00 AM 
-	public final String marketClose = "163000";//4:30:00 PM
-	//								  "012345" index references
-	/*
-	 * Default constructor: starts with 15 minute trade checking increments
-	 * and 1 minute stoploss checking increments
-	 */
+	private final String TRADE_INCREMENT;
+	private final String STOP_INCREMENT;
+	private static final String MILLIS_INCREMENT = "010101999";//1 second
+	private static final String MARKET_OPEN =  "093000";//9:30:00 AM 
+	private static final String MARKET_CLOSE = "163000";//4:30:00 PM
+	//								   		   "012345678" index references
+	private Strategy strat;
+	
+
 	public Clock()
 	{
-		TRADE_INCREMENT =  "001500";//15 minutes
-		STOP_INCREMENT =   "000100";//1 minute 
+		TRADE_INCREMENT =  "011501";//15 minutes
+		STOP_INCREMENT =   "010101";//1 minute 
+		strat = new Strategy();
 	}
-	/*
-	 * Overloaded constructor: let's the user input custom increments for 
-	 * trade and stoploss checking increments
-	 * USES "HHMMSS" for what the input should be
-	 */
-	public Clock(String t, String s)
+	
+	public Clock(String t, String sto, Strategy str)
 	{
 		TRADE_INCREMENT =  t;
-		STOP_INCREMENT =  s;
+		STOP_INCREMENT =  sto;
+		strat = str;
+	}
+	
+	// Returns the current time in a String
+	public static String time()
+	{
+		return (new SimpleDateFormat("HHmmssSS").format(Calendar.getInstance().getTime()));
 	}
 	
 	/*
@@ -49,24 +61,88 @@ public class Clock
 	 */
 	public void run()
 	{
-		String timeStamp = null;
-		while(!tooVolatile)
+		int c = 0;
+		while(strat.isStable())//if market is stable
 		{
-			timeStamp = Clock.currentTime();
-			System.out.println(timeStamp);
-			//if(Integer.parseInt(timeStamp.substring(2)) % TRADE_INCREMENT == 0)
+			if(fitsMillis(MILLIS_INCREMENT))//if time is not a fractional second
+			{
+				System.out.println(Clock.time());
+				if(fitsTiming(TRADE_INCREMENT))
+					strat.trade();
 				
+				if(fitsTiming(STOP_INCREMENT))
+				{
+					strat.confirmStability();
+					strat.stopGap();
+				}
+			}
 		}
-	}
-	// Returns the current time in a String
-	public static String getCurrentTime()
-	{
-		return (new SimpleDateFormat("HHmmss").format(Calendar.getInstance().getTime()));
+			
 	}
 	
-	private boolean isSeconds(String i)//i for increment
+	//Simple helper method that cleans up the look of the run method
+	private boolean fitsTiming(String inc)
 	{
-		int currentSeconds = Integer.parseInt(Clock.currentTime().substring(4));
-		int incrementSeconds = Integer.parseInt(i.substring(4));
+		boolean flag = false;
+		
+		if(fitsHours(inc))
+			if(fitsMinutes(inc))
+				if(fitsSeconds(inc))
+					return true;
+			
+		return flag;
+	}
+	
+	/*
+	 * Takes in the increment to be used, usually either trade or stop
+	 * increment, parses out only the seconds/minutes etc, and then converts to an 
+	 * integer. The same is done for the current time. Then, if the time
+	 * is divisible by the increment, which is calculated using modulo,
+	 * true is returned. Otherwise, false. 
+	 * 
+	 * All of the "fitsTime" methods are essentially identical, with
+	 * the only difference being naming and the substring parameters,
+	 * but I think they make the run and fitsTiming method easier to read 
+	 * (IS 05/2/15)
+	 */
+	
+	private boolean fitsMillis(String inc)
+	{
+		int currentSeconds = Integer.parseInt(Clock.time().substring(6, 8));
+		int incrementSeconds = Integer.parseInt(inc.substring(6, 8));
+		if(currentSeconds % incrementSeconds == 0)
+			return true;
+		else
+			return false;
+	}
+	
+	private boolean fitsSeconds(String inc)
+	{
+		int currentSeconds = Integer.parseInt(Clock.time().substring(4, 6));
+		int incrementSeconds = Integer.parseInt(inc.substring(4, 6));
+		if(currentSeconds % incrementSeconds == 0)
+			return true;
+		else
+			return false;
+	}
+	
+	private boolean fitsMinutes(String inc)
+	{
+		int currentMinutes = Integer.parseInt(Clock.time().substring(2,4));
+		int incrementMinutes = Integer.parseInt(inc.substring(2,4));
+		if(currentMinutes % incrementMinutes == 0)
+			return true;
+		else
+			return false;
+	}
+	
+	private boolean fitsHours(String inc)
+	{
+		int currentHours = Integer.parseInt(Clock.time().substring(0,2));
+		int incrementHours = Integer.parseInt(inc.substring(0,2));
+		if(currentHours % incrementHours == 0)
+			return true;
+		else
+			return false;
 	}
 }
