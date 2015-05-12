@@ -2,6 +2,8 @@ package clock;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import strategies.Strategy;
 
@@ -32,46 +34,62 @@ public class Clock
 	private static final String MARKET_OPEN =  "093000";//9:30:00 AM 
 	private static final String MARKET_CLOSE = "163000";//4:30:00 PM
 	//								   		   "012345678" index references
-	private Strategy strat;
 	
+	private Strategy strat;
 
 	public Clock()
 	{
 		TRADE_INCREMENT =  "011501";//15 minutes
 		STOP_INCREMENT =   "010101";//1 minute 
 		strat = new Strategy();
+		Timer t = new Timer();
+		t.schedule(new Tic(), 0, 1000);
 	}
 	
-	public Clock(String t, String sto, Strategy str)
+	public Clock(String ti, String si, Strategy str)
 	{
-		TRADE_INCREMENT =  t;
-		STOP_INCREMENT =  sto;
+		TRADE_INCREMENT =  ti;
+		STOP_INCREMENT =  si;
 		strat = str;
+		Timer t = new Timer();
+		t.schedule(new Tic(), 0, 1000);
 	}
 	
 	// Returns the current time in a String
 	public static String time()
 	{
-		return (new SimpleDateFormat("HHmmssSS").format(Calendar.getInstance().getTime()));
+		return (new SimpleDateFormat("HHmmssSSS").format(Calendar.getInstance().getTime()));
 	}
 	
+	class Tic extends TimerTask
+	{
+
+		public void run()
+		{
+			runEverySecond();
+		}
+	}
 	/*
 	 * run method is the main control, and contains the
 	 * while(!tooVolatile) loop that runs basically forever
 	 */
-	public void run()
+	public void runEverySecond()
 	{
-		int c = 0;
-		while(strat.isStable())//if market is stable
+		System.out.println("78 Time was: " + this.time());
+		if(strat.isStable())//if market is stable
 		{
 			if(fitsMillis(MILLIS_INCREMENT))//if time is not a fractional second
 			{
-				System.out.println(Clock.time());
+				
 				if(fitsTiming(TRADE_INCREMENT))
+				{
+					System.out.println("Trade increment called, time was: " + Clock.time());
 					strat.trade();
+				}
 				
 				if(fitsTiming(STOP_INCREMENT))
 				{
+					System.out.println("Stop increment called, time was: " + Clock.time());
 					strat.confirmStability();
 					strat.stopGap();
 				}
@@ -108,8 +126,8 @@ public class Clock
 	
 	private boolean fitsMillis(String inc)
 	{
-		int currentSeconds = Integer.parseInt(Clock.time().substring(6, 8));
-		int incrementSeconds = Integer.parseInt(inc.substring(6, 8));
+		int currentSeconds = Integer.parseInt(Clock.time().substring(6));
+		int incrementSeconds = Integer.parseInt(inc.substring(6));
 		if(currentSeconds % incrementSeconds == 0)
 			return true;
 		else
