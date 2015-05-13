@@ -30,10 +30,9 @@ public class Clock
 	 */
 	private final String TRADE_INCREMENT;
 	private final String STOP_INCREMENT;
-	private static final String MILLIS_INCREMENT = "010101999";//1 second
 	private static final String MARKET_OPEN =  "093000";//9:30:00 AM 
 	private static final String MARKET_CLOSE = "163000";//4:30:00 PM
-	//								   		   "012345678" index references
+	//								   		   "012345" index references
 	
 	private Strategy strat;
 
@@ -51,6 +50,10 @@ public class Clock
 		TRADE_INCREMENT =  ti;
 		STOP_INCREMENT =  si;
 		strat = str;
+	}
+	
+	public void start()
+	{
 		Timer t = new Timer();
 		t.schedule(new Tic(), 0, 1000);
 	}
@@ -58,44 +61,35 @@ public class Clock
 	// Returns the current time in a String
 	public static String time()
 	{
-		return (new SimpleDateFormat("HHmmssSSS").format(Calendar.getInstance().getTime()));
+		return (new SimpleDateFormat("HHmmss").format(Calendar.getInstance().getTime()));
 	}
 	
 	class Tic extends TimerTask
 	{
-
 		public void run()
 		{
 			runEverySecond();
 		}
 	}
-	/*
-	 * run method is the main control, and contains the
-	 * while(!tooVolatile) loop that runs basically forever
-	 */
+
 	public void runEverySecond()
 	{
-		System.out.println("78 Time was: " + this.time());
+		System.out.println("78 Time was: " + Clock.time());
 		if(strat.isStable())//if market is stable
-		{
-			if(fitsMillis(MILLIS_INCREMENT))//if time is not a fractional second
+		{	
+			if(fitsTiming(TRADE_INCREMENT))
 			{
-				
-				if(fitsTiming(TRADE_INCREMENT))
-				{
-					System.out.println("Trade increment called, time was: " + Clock.time());
-					strat.trade();
-				}
-				
-				if(fitsTiming(STOP_INCREMENT))
-				{
-					System.out.println("Stop increment called, time was: " + Clock.time());
-					strat.confirmStability();
-					strat.stopGap();
-				}
+				System.out.println("Trade increment called, time was: " + Clock.time());
+				strat.trade();
 			}
-		}
 			
+			if(fitsTiming(STOP_INCREMENT))
+			{
+				System.out.println("Stop increment called, time was: " + Clock.time());
+				strat.confirmStability();
+				strat.stopGap();
+			}
+		} 
 	}
 	
 	//Simple helper method that cleans up the look of the run method
@@ -123,16 +117,6 @@ public class Clock
 	 * but I think they make the run and fitsTiming method easier to read 
 	 * (IS 05/2/15)
 	 */
-	
-	private boolean fitsMillis(String inc)
-	{
-		int currentSeconds = Integer.parseInt(Clock.time().substring(6));
-		int incrementSeconds = Integer.parseInt(inc.substring(6));
-		if(currentSeconds % incrementSeconds == 0)
-			return true;
-		else
-			return false;
-	}
 	
 	private boolean fitsSeconds(String inc)
 	{
