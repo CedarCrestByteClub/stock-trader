@@ -17,4 +17,12 @@ public class StockBot extends Robot
 		this.mouseMove(welcomeX, welcomeY);
 		this.mousePress(1);
 	}
+	public void enter()
+	{
+		System.out.println("Entering a position!");
+	}
+	public void exit()
+	{
+		System.out.println("Exiting the position!");
+	}
 }
